@@ -25,7 +25,7 @@ def quote_to_edges(q: MarketQuote) -> tuple[Edge, Edge]:
         v=q.quote,
         w=-log(q.bid*(1-q.fee)),
         symbol=q.symbol,
-        action="sell",
+        action="SELL",
         raw_rate=q.bid,
         fee=q.fee
     )
@@ -35,7 +35,7 @@ def quote_to_edges(q: MarketQuote) -> tuple[Edge, Edge]:
         v=q.base,
         w=-log((1/q.ask)*(1-q.fee)),
         symbol=q.symbol,
-        action="buy",
+        action="BUY",
         raw_rate=(1/q.ask),
         fee=q.fee
     )
@@ -53,7 +53,7 @@ def build_edges(quotes: list[MarketQuote]) -> list[Edge]:
             edges.extend(quote_to_edges(q))
     return edges
 
-def build_edge_lookup(edges: list[Edge]) -> dict[str, list[Edge]]:
+def build_edge_lookup(edges: list[Edge]) -> dict[tuple[str, str], list[Edge]]:
     """Builds a dictionary mapping a currency to its outgoing edges.
     
     Returns a dictionary where the keys are currency symbols and the values are lists
@@ -62,9 +62,10 @@ def build_edge_lookup(edges: list[Edge]) -> dict[str, list[Edge]]:
     lookup = {}
     for e in edges:
         # Add edge to dict mapping from currency to outgoing edges
-        if e.u not in lookup:
-            lookup[e.u] = []
-        lookup[e.u].append(e)
+        key = (e.u, e.v)
+        if key not in lookup:
+            lookup[key] = []
+        lookup[key].append(e)
     return lookup
 
 def build_nodes(edges: list[Edge]) -> dict[str, int]:

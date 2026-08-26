@@ -1,4 +1,7 @@
-def find_negative_cycle(indexed_edges: list[tuple[int, int, float, object]], num_nodes: int) -> list[int] | None:
+def find_negative_cycle(
+    indexed_edges: list[tuple[int, int, float, object]], 
+    num_nodes: int
+) -> list[int] | None:
     """Finds a negative weight cycle in a graph represented by indexed edges.
 
     Returns a list of node indices forming the negative cycle if one exists, otherwise
@@ -48,7 +51,6 @@ def recover_negative_cycle(v: int, pred: list[int], num_nodes: int) -> list[int]
         cycle.append(curr)
         curr = pred[curr]
 
-    cycle.append(x)
     # Reverse cycle to follow the correct order of traversal
     cycle.reverse()
     return cycle
