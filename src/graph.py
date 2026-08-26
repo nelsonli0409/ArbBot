@@ -56,8 +56,8 @@ def build_edges(quotes: list[MarketQuote]) -> list[Edge]:
 def build_edge_lookup(edges: list[Edge]) -> dict[str, list[Edge]]:
     """Builds a dictionary mapping a currency to its outgoing edges.
     
-    Returns a dictionary where the keys are currency symbols and the values are lists of edges
-    originating from that currency.
+    Returns a dictionary where the keys are currency symbols and the values are lists
+    of edges originating from that currency.
     """
     lookup = {}
     for e in edges:
@@ -66,3 +66,32 @@ def build_edge_lookup(edges: list[Edge]) -> dict[str, list[Edge]]:
             lookup[e.u] = []
         lookup[e.u].append(e)
     return lookup
+
+def build_nodes(edges: list[Edge]) -> dict[str, int]:
+    """Builds a dictionary mapping a currency to a unique node index.
+    
+    Returns a dictionary where keys are currency symbols and values are unique node
+    indices.
+    """
+    nodes = {}
+    index = 0
+    # Assign unique index to each currency symbol for all edges
+    for e in edges:
+        if e.u not in nodes:
+            nodes[e.u] = index
+            index += 1
+        if e.v not in nodes:
+            nodes[e.v] = index
+            index += 1
+    return nodes
+
+def index_edges(edges: list[Edge], nodes: dict[str, int]) -> list[tuple[int, int, float, Edge]]:
+    """Converts string node identifiers in edges to integer indices.
+    
+    Returns a list of tuples where each tuple contains the indices for the source and
+    target currency nodes, the edge weight, and the original edge object.
+    """
+    indexed_edges = []
+    for e in edges:
+        indexed_edges.append((nodes[e.u], nodes[e.v], e.w, e))
+    return indexed_edges
