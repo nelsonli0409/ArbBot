@@ -34,3 +34,16 @@ class MarketQuote:
     bid: float # The highest price a buyer is willing to pay for the asset
     ask: float # The lowest price a seller is willing to accept for the asset
     fee: float # The trading fee for the market quote
+
+@dataclass(frozen=True)
+class SimulationResult:
+    """
+    Represents the result of a trading simulation.
+    """
+    start_currency: str
+    start_amount: float
+    final_amount: float
+    pnl_abs: float # The absolute profit or loss from the simulation
+    pnl_pct: float # The percentage profit or loss from the simulation
+    orders: list[Order] # The list of orders executed during the simulation
+    cycle: list[str] # Currency symbols in execution order
