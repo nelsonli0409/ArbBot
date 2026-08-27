@@ -1,6 +1,6 @@
 import math
 import pytest
-from src.models import Edge, MarketQuote
+from src.models import MarketQuote
 from src.graph import (
     validate_quote,
     quote_to_edges,
@@ -10,10 +10,17 @@ from src.graph import (
     index_edges
 )
 
+########################
+# CONSTANTS
+########################
+
 FEE = 0.01
 
-def test_validate_quote_accepts_valid_quote():
-    q = MarketQuote(
+########################
+# SAMPLE OBJECTS
+########################
+
+q1 = MarketQuote(
         symbol="BTCUSDT",
         base="BTC",
         quote="USDT",
@@ -21,10 +28,34 @@ def test_validate_quote_accepts_valid_quote():
         ask=62010.0,
         fee=FEE
     )
-    assert validate_quote(q) is True
+
+q2 = MarketQuote(
+    symbol="ETHUSDT",
+    base="ETH",
+    quote="USDT",
+    bid=3000.0,
+    ask=3001.0,
+    fee=FEE
+)
+
+q3 = MarketQuote(
+    symbol="SOLUSDT", 
+    base="SOL", 
+    quote="USDT", 
+    bid=150.0, 
+    ask=150.2, 
+    fee=FEE
+)
+
+########################
+# TESTS
+########################
+
+def test_validate_quote_accepts_valid_quote():
+    assert validate_quote(q1) is True
 
 def test_validate_quote_rejects_bad_spread():
-    q = MarketQuote(
+    bad_quote = MarketQuote(
         symbol="BTCUSDT", 
         base="BTC", 
         quote="USDT", 
@@ -32,34 +63,16 @@ def test_validate_quote_rejects_bad_spread():
         ask=62010.0, 
         fee=FEE
     )
-    assert validate_quote(q) is False
+    assert validate_quote(bad_quote) is False
 
 def test_quote_to_edges_returns_two_directed_edges():
-    q = MarketQuote(
-        symbol="ETHUSDT",
-        base="ETH",
-        quote="USDT",
-        bid=3000.0,
-        ask=3001.0,
-        fee=FEE
-    )
-
-    e1, e2 = quote_to_edges(q)
+    e1, e2 = quote_to_edges(q2)
     pairs = {(e1.u, e1.v), (e2.u, e2.v)}
 
     assert pairs == {("ETH", "USDT"), ("USDT", "ETH")}
 
 def test_quote_to_edges_uses_expected_rates():
-    q = MarketQuote(
-        symbol="ETHUSDT",
-        base="ETH",
-        quote="USDT",
-        bid=3000.0,
-        ask=3001.0,
-        fee=FEE
-    )
-
-    base_edge, quote_edge = quote_to_edges(q)
+    base_edge, quote_edge = quote_to_edges(q2)
 
     # One edge should use bid, the other 1/ask
     raw_rates = sorted([base_edge.raw_rate, quote_edge.raw_rate])
@@ -67,29 +80,12 @@ def test_quote_to_edges_uses_expected_rates():
     assert raw_rates[1] == pytest.approx(3000.0)
 
 def test_edge_weights_are_negative_log_of_effective_rate():
-    q = MarketQuote(
-        symbol="ETHUSDT",
-        base="ETH",
-        quote="USDT",
-        bid=3000.0,
-        ask=3001.0,
-        fee=FEE
-    )
-
-    e1, e2 = quote_to_edges(q)
+    e1, e2 = quote_to_edges(q1)
     for e in (e1, e2):
         r_effective = e.raw_rate * (1 - e.fee)
         assert e.w == pytest.approx(-math.log(r_effective))
 
 def test_build_edges_skips_invalid_quotes():
-    good = MarketQuote(
-        symbol="BTCUSDT",
-        base="BTC",
-        quote="USDT",
-        bid=62000.0,
-        ask=62010.0,
-        fee=FEE
-    )
     # bid >= ask
     bad1 = MarketQuote(
         symbol="BADUSDT",
@@ -118,20 +114,11 @@ def test_build_edges_skips_invalid_quotes():
         fee=FEE
     )
 
-    edges = build_edges([good, bad1, bad2, bad3])
+    edges = build_edges([q1, bad1, bad2, bad3])
     assert len(edges) == 2  # Only good quote contributes
 
 def test_build_edge_lookup_contains_directed_pairs():
-    q = MarketQuote(
-        symbol="SOLUSDT", 
-        base="SOL", 
-        quote="USDT", 
-        bid=150.0, 
-        ask=150.2, 
-        fee=FEE
-    )
-
-    edges = build_edges([q])
+    edges = build_edges([q3])
     lookup = build_edge_lookup(edges)
     assert ("SOL", "USDT") in lookup
     assert ("USDT", "SOL") in lookup
@@ -142,23 +129,6 @@ def test_build_edge_lookup_handles_empty_edges():
     assert lookup == {}
 
 def test_build_nodes_creates_unique_nodes():
-    q1 = MarketQuote(
-        symbol="BTCUSDT",
-        base="BTC",
-        quote="USDT",
-        bid=62000.0,
-        ask=62010.0,
-        fee=FEE
-    )
-    q2 = MarketQuote(
-        symbol="ETHUSDT",
-        base="ETH",
-        quote="USDT",
-        bid=3000.0,
-        ask=3001.0,
-        fee=FEE
-    )
-
     edges = build_edges([q1, q2])
     nodes = build_nodes(edges)
     assert nodes == {"BTC": 0, "USDT": 1, "ETH": 2}
@@ -169,45 +139,19 @@ def test_build_nodes_handles_empty_edges():
     assert nodes == {}
 
 def test_build_nodes_handles_duplicate_nodes():
-    q1 = MarketQuote(
-        symbol="BTCUSDT",
-        base="BTC",
-        quote="USDT",
-        bid=62000.0,
-        ask=62010.0,
-        fee=FEE
+    dupe = MarketQuote(
+        symbol=q1.symbol,
+        base=q1.base,
+        quote=q1.quote,
+        bid=q1.bid,
+        ask=q1.ask,
+        fee=q1.fee
     )
-    q2 = MarketQuote(
-        symbol="BTCUSDT",
-        base="BTC",
-        quote="USDT",
-        bid=62000.0,
-        ask=62010.0,
-        fee=FEE
-    )
-
-    edges = build_edges([q1, q2])
+    edges = build_edges([q1, dupe])
     nodes = build_nodes(edges)
     assert nodes == {"BTC": 0, "USDT": 1}
 
 def test_index_edges_returns_correct_tuple():
-    q1 = MarketQuote(
-        symbol="BTCUSDT",
-        base="BTC",
-        quote="USDT",
-        bid=62000.0,
-        ask=62010.0,
-        fee=FEE
-    )
-    q2 = MarketQuote(
-        symbol="ETHUSDT",
-        base="ETH",
-        quote="USDT",
-        bid=3000.0,
-        ask=3001.0,
-        fee=FEE
-    )
-
     edges = build_edges([q1, q2])
     nodes = build_nodes(edges)
     indexed = index_edges(edges, nodes)
