@@ -1,4 +1,4 @@
-from models import Edge, MarketQuote
+from .models import Edge, MarketQuote
 from math import log
 
 def validate_quote(q: MarketQuote) -> bool:
@@ -11,7 +11,7 @@ def validate_quote(q: MarketQuote) -> bool:
         bool(q.symbol and q.base and q.quote) and
         q.bid >= 0 and
         q.ask >= 0 and
-        q.bid <= q.ask and
+        q.bid < q.ask and
         0 <= q.fee < 1
     )
 
