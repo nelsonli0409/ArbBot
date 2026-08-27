@@ -1,4 +1,4 @@
-from models import Edge, Order, SimulationResult
+from .models import Edge, Order, SimulationResult
 
 def index_to_symbol(cycle: list[int], nodes: dict[str, int]) -> list[str]:
     """Converts a cycle of node indices into a cycle of currency symbols based on the
