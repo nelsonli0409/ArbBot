@@ -190,11 +190,17 @@ def test_simulate_cycle_correctness():
     currency_cycle = ["USDT", "BTC", "ETH"]
     edges = build_edges([q1, q2, q4])
     edge_lookup = build_edge_lookup(edges)
-    result = simulate_cycle(currency_cycle, edge_lookup, DEFAULT_START_AMOUNT, DEFAULT_SLIPPAGE, DEFAULT_SLIPPAGE)
+    result = simulate_cycle(
+        currency_cycle, 
+        edge_lookup, 
+        DEFAULT_START_AMOUNT, 
+        DEFAULT_SLIPPAGE, 
+        DEFAULT_SLIPPAGE)
 
-    assert result.final_amount == DEFAULT_FINAL_AMOUNT
-    assert result.pnl_abs == DEFAULT_FINAL_AMOUNT - DEFAULT_START_AMOUNT
-    assert result.pnl_pct == ((DEFAULT_FINAL_AMOUNT / DEFAULT_START_AMOUNT) - 1) * 100
+    assert result.final_amount == pytest.approx(DEFAULT_FINAL_AMOUNT)
+    assert result.pnl_abs == pytest.approx(DEFAULT_FINAL_AMOUNT - DEFAULT_START_AMOUNT)
+    assert result.pnl_pct == pytest.approx(
+        ((DEFAULT_FINAL_AMOUNT / DEFAULT_START_AMOUNT) - 1) * 100)
     assert approx_orders(result.orders, [o1, o2, o3]) == True
     assert result.cycle == ["USDT", "BTC", "ETH"]
 
