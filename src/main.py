@@ -31,6 +31,7 @@ def parse_args() -> argparse.Namespace:
         default=0.2, 
         help="Only report cycles with profit/loss percentage above this threshold"
     )
+    p.add_argument("--json", action="store_true", help="Output machine-readable JSON")
     return p.parse_args()
 
 def format_orders_table(orders: list[Order]) -> str:
