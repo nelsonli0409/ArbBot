@@ -1,4 +1,7 @@
 import argparse
+import json
+from datetime import datetime, timezone
+from .models import Order
 from .config import DataFeedConfig
 from .data_feed import fetch_quotes
 from .graph import (
@@ -29,6 +32,44 @@ def parse_args() -> argparse.Namespace:
         help="Only report cycles with profit/loss percentage above this threshold"
     )
     return p.parse_args()
+
+def format_orders_table(orders: list[Order]) -> str:
+    """Takes in a list of Orders and returns a formatted string representation of the
+    orders.
+    """
+    if not orders:
+        return "No orders available."
+
+    header = f"{'No.':<3} {'Symbol':<10} {'Action':<6} {'Amount':<12} {'Price':<12} {'Fee':<12}"
+    rows = [header]
+
+    for i, order in enumerate(orders, 1):
+        rows.append(
+            f"{i:<3} {order.symbol:<10} {order.action:<6} {round(order.amount, 5):<12} {order.price:<12} {order.fee:<12}"
+        )
+
+    return "\n".join(rows)
+
+def build_json_payload(args: argparse.Namespace, result) -> dict:
+    """Builds a JSON payload containing the arbitrage cycle result and relevant
+    parameters.
+    """
+
+    return {
+        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        "timeout_sec": args.timeout_sec,
+        "fee": args.fee,
+        "min_pnl_pct": args.min_pnl_pct,
+        "slippage_buy_bps": args.slippage_buy_bps,
+        "slippage_sell_bps": args.slippage_sell_bps,
+        "start_currency": args.start_currency,
+        "start_amount": args.start_amount,
+        "final_amount": result.final_amount,
+        "pnl_abs": result.pnl_abs,
+        "pnl_pct": result.pnl_pct,
+        "cycle": result.cycle,
+        "orders": [order.__dict__ for order in result.orders]
+    }
 
 def main() -> None:
     # Configuration and initial parameters for the arbitrage bot
@@ -62,9 +103,17 @@ def main() -> None:
         args.slippage_sell_bps
     )
 
+    if result.pnl_pct < args.min_pnl_pct:
+        print("Profit/Loss percentage below minimum threshold.")
+        return
+
+    if args.json:
+        payload = build_json_payload(args, result)
+        print(json.dumps(payload, indent=2))
+        return
+
     # Summary
     print("Currency cycle:", result.cycle)
-    print("Orders:", result.orders)
     print("Start currency:", args.start_currency)
     print("Start amount:", args.start_amount)
     print("Final amount:", result.final_amount)
@@ -72,6 +121,8 @@ def main() -> None:
     print("Profit/Loss (percentage):", result.pnl_pct)
     print("Slippage buy (bps):", args.slippage_buy_bps)
     print("Slippage sell (bps):", args.slippage_sell_bps)
+    print("Orders:")
+    print(format_orders_table(result.orders))
 
 if __name__ == "__main__":
     main()
