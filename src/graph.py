@@ -63,9 +63,7 @@ def build_edge_lookup(edges: list[Edge]) -> dict[tuple[str, str], list[Edge]]:
     for e in edges:
         # Add edge to dict mapping from currency to outgoing edges
         key = (e.u, e.v)
-        if key not in lookup:
-            lookup[key] = []
-        lookup[key].append(e)
+        lookup[key] = e
     return lookup
 
 def build_nodes(edges: list[Edge]) -> dict[str, int]:

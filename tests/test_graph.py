@@ -128,6 +128,20 @@ def test_build_edge_lookup_handles_empty_edges():
     lookup = build_edge_lookup(edges)
     assert lookup == {}
 
+def test_build_edge_lookup_handles_similar_edges():
+    q1_duplicate = MarketQuote(
+        symbol=q1.symbol,
+        base=q1.base,
+        quote=q1.quote,
+        bid=q2.bid,
+        ask=q2.ask,
+        fee=q1.fee
+    )
+    edges = build_edges([q1, q1_duplicate])
+    lookup = build_edge_lookup(edges)
+
+    assert len(lookup) == 2
+
 def test_build_nodes_creates_unique_nodes():
     edges = build_edges([q1, q2])
     nodes = build_nodes(edges)

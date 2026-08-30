@@ -22,6 +22,7 @@ class Order:
     action: str
     amount: float # The amount of the asset to trade
     price: float # The price (bid/ask) at which the order will be executed
+    fee: float
 
 @dataclass(frozen=True)
 class MarketQuote:
