@@ -54,7 +54,8 @@ def cycle_to_orders(
             action=edge.action,
             amount=trade_amount,
             # raw rate is stored as buy or 1/ask, so if buying we take the inverse
-            price=(1 / edge.raw_rate) if edge.action == "BUY" else edge.raw_rate
+            price=(1 / edge.raw_rate) if edge.action == "BUY" else edge.raw_rate,
+            fee=edge.fee
         ))
 
         trade_amount = trade_amount * ( edge.raw_rate * ( 1 - edge.fee ) )
@@ -73,20 +74,24 @@ def simulate_cycle(
     Returns a SimulationResult containing the final amount, the profit and loss, and
     the list of orders executed.
     """
+    if start_amount <= 0:
+        raise ValueError("Start amount must be greater than zero.")
+
     orders = cycle_to_orders(currency_cycle, edge_lookup, start_amount)
 
     # Apply slippage to each amount
     final_amount = start_amount
     for order in orders:
         slippage = slippage_bps_buy if order.action == "BUY" else slippage_bps_sell
-        final_amount = final_amount * (1 - slippage / 10000)
+        rate = (1 / order.price) if order.action == "BUY" else order.price
+        final_amount = final_amount * rate * (1 - order.fee) * (1 - slippage / 10000)
 
     return SimulationResult(
         start_currency=currency_cycle[0],
         start_amount=start_amount,
         final_amount=final_amount,
         pnl_abs=final_amount - start_amount,
-        pnl_pct=((final_amount / start_amount) - 1) * 100 if start_amount != 0 else 0,
+        pnl_pct=((final_amount / start_amount) - 1) * 100,
         orders=orders,
         cycle=currency_cycle
     )
