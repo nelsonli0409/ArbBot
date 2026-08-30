@@ -2,7 +2,9 @@ from .models import MarketQuote, DataFeedConfig
 import requests
 import logging
 
-def fetch_book_ticker_raw(config: DataFeedConfig) -> list[dict]:
+DEFAULT_CONFIG = DataFeedConfig(base_url="https://api.binance.com")
+
+def fetch_book_ticker_raw(config: DataFeedConfig = DEFAULT_CONFIG) -> list[dict]:
     """Fetches raw best bid/ask rows from exchange REST endpoint.
     
     Returns a list of raw json data from the exchange.
@@ -16,7 +18,7 @@ def fetch_book_ticker_raw(config: DataFeedConfig) -> list[dict]:
         logging.error(f"Error fetching book ticker: {e}")
         return []
 
-def build_symbol_map(config: DataFeedConfig) -> dict[str, tuple[str, str]]:
+def build_symbol_map(config: DataFeedConfig = DEFAULT_CONFIG) -> dict[str, tuple[str, str]]:
     """Parses a Binance trading pair symbol into its base and quote assets.
     
     Returns a tuple containing the base and quote assets.
@@ -66,7 +68,7 @@ def normalize_book_ticker_row(
         logging.error(f"Error normalizing book ticker row: {e}")
         return None
 
-def fetch_quotes(fee: float, config: DataFeedConfig) -> list[MarketQuote]:
+def fetch_quotes(fee: float, config: DataFeedConfig = DEFAULT_CONFIG) -> list[MarketQuote]:
     """Fetch and normalize all quotes for downstream graph construction.
     
     Returns a list of normalized MarketQuote objects.
