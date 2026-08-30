@@ -1,4 +1,5 @@
-from .models import MarketQuote, DataFeedConfig
+from .models import MarketQuote
+from .config import DataFeedConfig
 import requests
 import logging
 

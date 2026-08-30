@@ -48,11 +48,3 @@ class SimulationResult:
     pnl_pct: float # The percentage profit or loss from the simulation
     orders: list[Order] # The list of orders executed during the simulation
     cycle: list[str] # Currency symbols in execution order
-
-@dataclass(frozen=True)
-class DataFeedConfig:
-    """
-    Configuration for a data feed providing market quotes.
-    """
-    base_url: str
-    timeout_sec: float = 5.0 # The timeout for the data feed in seconds
