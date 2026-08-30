@@ -1,7 +1,8 @@
 import pytest
 import requests
 from unittest.mock import patch, Mock
-from src.models import MarketQuote, DataFeedConfig
+from src.models import MarketQuote
+from src.config import DataFeedConfig
 from src.data_feed import (
     fetch_book_ticker_raw,
     build_symbol_map,

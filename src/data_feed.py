@@ -3,7 +3,7 @@ from .config import DataFeedConfig
 import requests
 import logging
 
-DEFAULT_CONFIG = DataFeedConfig(base_url="https://api.binance.com")
+DEFAULT_CONFIG = DataFeedConfig(base_url="https://api.binance.us")
 
 def fetch_book_ticker_raw(config: DataFeedConfig = DEFAULT_CONFIG) -> list[dict]:
     """Fetches raw best bid/ask rows from exchange REST endpoint.
@@ -50,23 +50,29 @@ def normalize_book_ticker_row(
     Returns a MarketQuote object if the row is valid, otherwise None.
     """
     try:
-        base, quote = symbol_map[row['symbol']]
+        symbol = row.get('symbol')
+        if not symbol or symbol not in symbol_map:
+            return None
+
+        base, quote = symbol_map[symbol]
         bid = float(row['bidPrice'])
         ask = float(row['askPrice'])
 
+        # Return None instead of raising error because inactive/delisted pairs may
+        # have invalid bid/ask prices
         if bid <= 0 or ask <= 0 or bid >= ask:
-            raise ValueError(f"Invalid bid/ask prices in row: {row}")
+            return None
         
         return MarketQuote(
-            symbol=row['symbol'],
+            symbol=symbol,
             base=base,
             quote=quote,
             bid=bid,
             ask=ask,
             fee=fee
         )
-    except (KeyError, ValueError) as e:
-        logging.error(f"Error normalizing book ticker row: {e}")
+    except (KeyError, ValueError, TypeError) as e:
+        logging.debug(f"Error normalizing book ticker row {row}: {e}")
         return None
 
 def fetch_quotes(fee: float, config: DataFeedConfig = DEFAULT_CONFIG) -> list[MarketQuote]:
@@ -75,9 +81,10 @@ def fetch_quotes(fee: float, config: DataFeedConfig = DEFAULT_CONFIG) -> list[Ma
     Returns a list of normalized MarketQuote objects.
     """
     raw_rows = fetch_book_ticker_raw(config)
+    symbol_map = build_symbol_map(config)
     quotes = []
     for row in raw_rows:
-        quote = normalize_book_ticker_row(row, fee, build_symbol_map(config))
+        quote = normalize_book_ticker_row(row, fee, symbol_map)
         if quote is not None:
             quotes.append(quote)
     return quotes
